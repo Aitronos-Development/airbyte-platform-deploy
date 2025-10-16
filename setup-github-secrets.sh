@@ -68,13 +68,12 @@ echo "⏳ Production service account: Create when prod project is ready"
 echo ""
 
 # ============================================
-# 3. Firebase Service Account
+# 3. Frontend Note
 # ============================================
-echo "${BLUE}Step 3: Firebase Service Account${NC}"
-echo "Please create this manually:"
-echo "1. Go to: https://console.firebase.google.com/project/airbyte-backend-staging/settings/serviceaccounts/adminsdk"
-echo "2. Click 'Generate new private key'"
-echo "3. Save as ~/firebase-service-account.json"
+echo "${BLUE}Step 3: Frontend Deployment${NC}"
+echo "✓ Frontend is served from GKE webapp container"
+echo "✓ No separate frontend deployment needed"
+echo "✓ Everything runs on GCP/GKE"
 echo ""
 
 # ============================================
@@ -87,7 +86,7 @@ echo "${GREEN}============================================${NC}"
 echo ""
 echo "📋 Next Steps:"
 echo ""
-echo "1. Add these 3 secrets to GitHub:"
+echo "1. Add these 2 secrets to GitHub:"
 echo "   Go to: GitHub Repo → Settings → Secrets → Actions"
 echo ""
 echo "   Secret 1: GCP_SA_KEY"
@@ -96,10 +95,6 @@ echo "   (Paste into GitHub)"
 echo ""
 echo "   Secret 2: GCP_SA_KEY_PROD"
 echo "   (Create when production is ready)"
-echo ""
-echo "   Secret 3: FIREBASE_SERVICE_ACCOUNT"
-echo "   Command: cat ~/firebase-service-account.json | pbcopy"
-echo "   (Paste into GitHub after downloading from Firebase Console)"
 echo ""
 echo "2. Create 'staging' branch:"
 echo "   git checkout -b staging"

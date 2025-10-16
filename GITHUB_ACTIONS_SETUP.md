@@ -93,16 +93,12 @@ gcloud iam service-accounts keys create ~/github-actions-prod-key.json \
 
 ---
 
-#### 3. `FIREBASE_SERVICE_ACCOUNT`
-**Description:** Service account for Firebase Hosting deployment
+#### 3. `DB_PASSWORD` (Optional for secret management)
+**Description:** Database password for Cloud SQL (only needed if managing via GitHub)
 
-**How to create:**
-1. Go to: https://console.firebase.google.com/project/airbyte-backend-staging/settings/serviceaccounts/adminsdk
-2. Click **Generate new private key**
-3. Download the JSON file
-4. Copy entire contents
+**Value:** Your Cloud SQL database password
 
-**Value:** Entire JSON contents from downloaded file
+**Note:** Currently handled via `kubectl` in workflow, but can be pre-configured.
 
 ---
 
@@ -110,9 +106,10 @@ gcloud iam service-accounts keys create ~/github-actions-prod-key.json \
 
 | Secret Name | Used By | Environment |
 |-------------|---------|-------------|
-| `GCP_SA_KEY` | Backend workflow | Staging |
-| `GCP_SA_KEY_PROD` | Backend workflow | Production |
-| `FIREBASE_SERVICE_ACCOUNT` | Frontend workflow | Both |
+| `GCP_SA_KEY` | Deploy workflow | Staging |
+| `GCP_SA_KEY_PROD` | Deploy workflow | Production |
+
+**Note:** Frontend is served from GKE, no separate deployment needed!
 
 ---
 

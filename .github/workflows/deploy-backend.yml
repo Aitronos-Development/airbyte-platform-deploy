@@ -1,4 +1,4 @@
-name: Deploy Connectors Platform Backend
+name: Deploy Connectors Platform
 
 on:
   push:
@@ -110,11 +110,13 @@ jobs:
         run: |
           echo "✅ Connectors Platform deployed to Staging!"
           echo ""
-          echo "🌐 URLs:"
+          echo "🌐 URLs (GKE serves both UI and API):"
           echo "  Platform UI: https://connectors-stage.aitronos.com"
           echo "  API Endpoint: https://connectors-api-stage.aitronos.com"
           echo ""
           echo "⏱️  SSL certificates may take 15-60 minutes to provision"
+          echo ""
+          echo "Note: Frontend is served from GKE webapp container"
 
   deploy-production:
     name: Deploy to Production
@@ -214,7 +216,9 @@ jobs:
         run: |
           echo "✅ Connectors Platform deployed to Production!"
           echo ""
-          echo "🌐 URLs:"
+          echo "🌐 URLs (GKE serves both UI and API):"
           echo "  Platform UI: https://connectors.aitronos.com"
           echo "  API Endpoint: https://connectors-api.aitronos.com"
+          echo ""
+          echo "Note: Frontend is served from GKE webapp container"
 
