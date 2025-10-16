@@ -35,7 +35,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: 'projects/828187884021/locations/global/workloadIdentityPools/github-actions/providers/github'
+          service_account: 'github-actions-staging@airbyte-backend-staging.iam.gserviceaccount.com'
       
       - name: Setup Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -128,7 +129,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY_PROD }}
+          workload_identity_provider: 'projects/828187884021/locations/global/workloadIdentityPools/github-actions/providers/github'
+          service_account: 'github-actions-staging@airbyte-backend-staging.iam.gserviceaccount.com'
       
       - name: Setup Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
