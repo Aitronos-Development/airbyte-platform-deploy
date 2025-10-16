@@ -66,10 +66,10 @@ jobs:
       - name: Create/Update Kubernetes resources
         run: |
           # Ensure namespace exists
-          kubectl create namespace airbyte --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create namespace airbyte --dry-run=client -o yaml | kubectl apply --validate=false -f -
           
           # Ensure service account exists
-          kubectl create serviceaccount airbyte-admin -n airbyte --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create serviceaccount airbyte-admin -n airbyte --dry-run=client -o yaml | kubectl apply --validate=false -f -
           
           # Annotate service account for Workload Identity
           kubectl annotate serviceaccount airbyte-admin -n airbyte \
@@ -87,7 +87,7 @@ jobs:
       
       - name: Apply Ingress
         run: |
-          kubectl apply -f ingress/dual-domain-ingress.yaml
+          kubectl apply --validate=false -f ingress/dual-domain-ingress.yaml
       
       - name: Wait for deployment
         run: |
