@@ -11,7 +11,7 @@ metadata:
 spec:
   rules:
   # Platform UI
-  - host: connectors-stage.aitronos.com
+  - host: connectors-staging.aitronos.com
     http:
       paths:
       - path: /
@@ -23,7 +23,7 @@ spec:
               number: 80
   
   # API Endpoint
-  - host: connectors-api-stage.aitronos.com
+  - host: connectors-api-staging.aitronos.com
     http:
       paths:
       - path: /
@@ -41,6 +41,6 @@ metadata:
   namespace: airbyte
 spec:
   domains:
-    - connectors-stage.aitronos.com
-    - connectors-api-stage.aitronos.com
+    - connectors-staging.aitronos.com
+    - connectors-api-staging.aitronos.com
 
