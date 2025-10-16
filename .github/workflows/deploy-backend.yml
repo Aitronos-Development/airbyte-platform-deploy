@@ -125,10 +125,6 @@ jobs:
       (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production') ||
       (github.event_name == 'push' && github.ref == 'refs/heads/main')
     
-    environment:
-      name: production
-      url: https://connectors.aitronos.com
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
