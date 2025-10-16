@@ -1,0 +1,19 @@
+# Helm
+charts/
+*.tgz
+
+# Secrets
+*.secret
+secrets/
+.secrets/
+
+# OS
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Octavia
+.octavia/
+octavia.db
+
