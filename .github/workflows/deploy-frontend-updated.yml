@@ -1,0 +1,140 @@
+name: Deploy Connectors Platform Frontend
+
+on:
+  push:
+    branches:
+      - staging    # Auto-deploy staging frontend
+      - main       # Auto-deploy production frontend
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend-updated.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  deploy-frontend-staging:
+    name: Deploy Frontend to Staging
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/staging')
+    
+    environment:
+      name: staging-frontend
+      url: https://connectors-stage.aitronos.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Checkout Airbyte Platform
+        uses: actions/checkout@v4
+        with:
+          repository: airbytehq/airbyte-platform
+          path: airbyte-platform
+          ref: main
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.6.12
+      
+      - name: Install dependencies
+        working-directory: airbyte-platform/airbyte-webapp
+        run: pnpm install --engine-strict=false
+      
+      - name: Build frontend for staging
+        working-directory: airbyte-platform/airbyte-webapp
+        env:
+          NODE_ENV: production
+          VITE_API_URL: https://connectors-api-stage.aitronos.com
+        run: pnpm build
+      
+      - name: Deploy to Firebase Hosting (Staging)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: airbyte-backend-staging
+          channelId: live
+          target: stage
+      
+      - name: Deployment Summary
+        run: |
+          echo "✅ Frontend deployed to Firebase Hosting (Staging)!"
+          echo ""
+          echo "🌐 URL: https://connectors-stage.aitronos.com"
+          echo ""
+          echo "Note: Custom domain may take 15-30 min to propagate"
+
+  deploy-frontend-production:
+    name: Deploy Frontend to Production
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    
+    environment:
+      name: production-frontend
+      url: https://connectors.aitronos.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Checkout Airbyte Platform
+        uses: actions/checkout@v4
+        with:
+          repository: airbytehq/airbyte-platform
+          path: airbyte-platform
+          ref: main
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.6.12
+      
+      - name: Install dependencies
+        working-directory: airbyte-platform/airbyte-webapp
+        run: pnpm install --engine-strict=false
+      
+      - name: Build frontend for production
+        working-directory: airbyte-platform/airbyte-webapp
+        env:
+          NODE_ENV: production
+          VITE_API_URL: https://connectors-api.aitronos.com
+        run: pnpm build
+      
+      - name: Deploy to Firebase Hosting (Production)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: airbyte-backend-staging
+          channelId: live
+          target: production
+      
+      - name: Deployment Summary
+        run: |
+          echo "✅ Frontend deployed to Firebase Hosting (Production)!"
+          echo ""
+          echo "🌐 URL: https://connectors.aitronos.com"
+

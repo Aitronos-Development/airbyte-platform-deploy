@@ -1,0 +1,190 @@
+name: Deploy Airbyte Platform
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'helm/**'
+      - 'ingress/**'
+      - 'bootstrap/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - environment: dev
+            branch: develop
+            cluster: airbyte-dev-gke
+          - environment: stage
+            branch: develop
+            cluster: airbyte-stage-gke
+    
+    # Only run for matching branch or manual trigger
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == matrix.environment) ||
+      (github.event_name == 'push' && github.ref == format('refs/heads/{0}', matrix.branch))
+    
+    environment:
+      name: ${{ matrix.environment }}
+    
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ matrix.cluster }}
+          location: ${{ secrets.GCP_REGION }}
+      
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'v3.13.0'
+      
+      - name: Add Airbyte Helm repo
+        run: |
+          helm repo add airbyte https://airbytehq.github.io/helm-charts
+          helm repo update
+      
+      - name: Create namespace
+        run: |
+          kubectl create namespace airbyte --dry-run=client -o yaml | kubectl apply -f -
+      
+      - name: Create service account
+        run: |
+          kubectl create serviceaccount airbyte-admin -n airbyte --dry-run=client -o yaml | kubectl apply -f -
+          
+          # Annotate with Workload Identity
+          kubectl annotate serviceaccount airbyte-admin -n airbyte \
+            iam.gke.io/gcp-service-account=${{ secrets.GSA_EMAIL }} \
+            --overwrite
+      
+      - name: Create secrets
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          kubectl create secret generic cloudsql-db-credentials \
+            -n airbyte \
+            --from-literal=password="${DB_PASSWORD}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+      
+      - name: Deploy with Helm
+        run: |
+          CHART_VERSION=${{ secrets.AIRBYTE_CHART_VERSION }}
+          
+          helm upgrade --install airbyte airbyte/airbyte \
+            --version ${CHART_VERSION} \
+            -n airbyte \
+            -f helm/values-${{ matrix.environment }}.yaml \
+            --wait \
+            --timeout 10m
+      
+      - name: Apply IAP resources
+        if: matrix.environment != 'dev'
+        run: |
+          kubectl apply -f ingress/iap/backend-config.yaml
+          kubectl apply -f ingress/iap/managed-certificate.yaml
+      
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/airbyte-server -n airbyte --timeout=5m
+          kubectl rollout status deployment/airbyte-webapp -n airbyte --timeout=5m
+      
+      - name: Verify deployment
+        run: |
+          kubectl get pods -n airbyte
+          kubectl get ingress -n airbyte
+
+  deploy-prod:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    environment:
+      name: prod
+    
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: airbyte-prod-gke
+          location: ${{ secrets.GCP_REGION }}
+      
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'v3.13.0'
+      
+      - name: Add Airbyte Helm repo
+        run: |
+          helm repo add airbyte https://airbytehq.github.io/helm-charts
+          helm repo update
+      
+      - name: Deploy with Helm
+        run: |
+          CHART_VERSION=${{ secrets.AIRBYTE_CHART_VERSION }}
+          
+          helm upgrade --install airbyte airbyte/airbyte \
+            --version ${CHART_VERSION} \
+            -n airbyte \
+            -f helm/values-prod.yaml \
+            --wait \
+            --timeout 15m
+      
+      - name: Apply IAP resources
+        run: |
+          kubectl apply -f ingress/iap/backend-config.yaml
+          kubectl apply -f ingress/iap/managed-certificate.yaml
+      
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/airbyte-server -n airbyte --timeout=10m
+          kubectl rollout status deployment/airbyte-webapp -n airbyte --timeout=10m
+          kubectl get pods -n airbyte
+          kubectl get ingress -n airbyte
+      
+      - name: Run smoke tests
+        run: |
+          # Wait for ingress to be ready
+          sleep 30
+          
+          # Check health endpoint (adjust URL as needed)
+          # curl -f https://airbyte.yourdomain.com/api/v1/health || exit 1
+          echo "Smoke tests would run here"
+

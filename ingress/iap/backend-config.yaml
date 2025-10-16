@@ -1,0 +1,44 @@
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: airbyte-iap-config
+  namespace: airbyte
+spec:
+  # Identity-Aware Proxy configuration
+  iap:
+    enabled: true
+    oauthclientCredentials:
+      secretName: airbyte-iap-secret
+    
+  # Connection draining timeout (for graceful shutdowns)
+  connectionDraining:
+    drainingTimeoutSec: 60
+  
+  # Session affinity (helpful for websockets)
+  sessionAffinity:
+    affinityType: "CLIENT_IP"
+    affinityCookieTtlSec: 3600
+  
+  # Health check configuration
+  healthCheck:
+    checkIntervalSec: 10
+    timeoutSec: 5
+    healthyThreshold: 2
+    unhealthyThreshold: 3
+    type: HTTP
+    requestPath: /health
+    port: 8080
+  
+  # Security headers
+  securityPolicy:
+    name: "airbyte-security-policy"  # Create via gcloud or Console
+  
+  # Timeout configuration
+  timeoutSec: 300  # 5 minutes for long-running operations
+  
+  # Custom request headers
+  customRequestHeaders:
+    headers:
+      - "X-Client-Region:{client_region}"
+      - "X-Client-City:{client_city}"
+

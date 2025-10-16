@@ -1,0 +1,188 @@
+# Airbyte Helm Chart Values - Production Environment
+# Production-grade configuration with HA and security
+
+global:
+  image:
+    registry: REGION-docker.pkg.dev/PROJECT_ID/airbyte-platform
+  
+  imagePullSecrets:
+    - name: artifact-registry-secret
+
+  serviceAccountName: airbyte-admin
+  
+  storage:
+    type: gcs
+    gcs:
+      bucket: REPLACE_WITH_STATE_BUCKET
+      credentialsJson: ""
+  
+  logs:
+    type: gcs
+    gcs:
+      bucket: REPLACE_WITH_LOGS_BUCKET
+      credentialsJson: ""
+
+postgresql:
+  enabled: false
+
+externalDatabase:
+  host: 127.0.0.1
+  port: 5432
+  database: airbyte
+  user: airbyte
+  existingSecret: cloudsql-db-credentials
+  existingSecretPasswordKey: password
+
+cloudSqlProxy:
+  enabled: true
+  instanceConnectionName: PROJECT_ID:REGION:INSTANCE_NAME
+  serviceAccount: ""
+  workloadIdentity: true
+
+# High availability configuration
+server:
+  replicaCount: 3
+  
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      memory: 4Gi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  
+  env:
+    - name: AIRBYTE_URL
+      value: "https://airbyte.YOUR_DOMAIN.com"
+    - name: WEBAPP_URL
+      value: "https://airbyte.YOUR_DOMAIN.com"
+
+worker:
+  replicaCount: 5
+  
+  resources:
+    requests:
+      cpu: 2000m
+      memory: 4Gi
+    limits:
+      memory: 8Gi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 5
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 75
+  
+  env:
+    - name: STORAGE_TYPE
+      value: GCS
+    - name: STORAGE_BUCKET_NAME
+      value: REPLACE_WITH_STORAGE_BUCKET
+    # Additional production tuning
+    - name: MAX_WORKERS
+      value: "10"
+    - name: MAX_SYNC_WORKERS
+      value: "8"
+
+temporal:
+  enabled: true
+  replicaCount: 3
+  
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      memory: 4Gi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+
+webapp:
+  replicaCount: 3
+  
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      memory: 2Gi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  
+  # Production ingress with IAP
+  ingress:
+    enabled: true
+    className: "gce"
+    annotations:
+      kubernetes.io/ingress.class: "gce"
+      kubernetes.io/ingress.global-static-ip-name: "airbyte-prod-ip"
+      networking.gke.io/managed-certificates: "airbyte-prod-cert"
+      kubernetes.io/ingress.allow-http: "false"
+      cloud.google.com/backend-config: '{"default": "airbyte-iap-config"}'
+      # Cloud Armor security policy
+      cloud.google.com/armor-config: '{"default": "airbyte-security-policy"}'
+    
+    hosts:
+      - host: airbyte.YOUR_DOMAIN.com
+        paths:
+          - path: /
+            pathType: Prefix
+    
+    tls:
+      - secretName: airbyte-prod-tls
+        hosts:
+          - airbyte.YOUR_DOMAIN.com
+
+# Production monitoring
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+
+# Pod disruption budgets for HA
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# Security
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Pod security policy
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+
+# Network policies (if supported)
+networkPolicy:
+  enabled: false  # Enable if you use network policies
+
+# Affinity rules for zone distribution
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - airbyte
+          topologyKey: topology.kubernetes.io/zone
+

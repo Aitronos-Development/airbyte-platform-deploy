@@ -1,0 +1,106 @@
+# Airbyte Helm Chart Values - Dev Environment
+# Smaller resource allocations for development
+
+global:
+  image:
+    registry: REGION-docker.pkg.dev/PROJECT_ID/airbyte-platform
+  
+  imagePullSecrets:
+    - name: artifact-registry-secret
+
+  serviceAccountName: airbyte-admin
+  
+  storage:
+    type: gcs
+    gcs:
+      bucket: REPLACE_WITH_STATE_BUCKET
+      credentialsJson: ""
+  
+  logs:
+    type: gcs
+    gcs:
+      bucket: REPLACE_WITH_LOGS_BUCKET
+      credentialsJson: ""
+
+postgresql:
+  enabled: false
+
+externalDatabase:
+  host: 127.0.0.1
+  port: 5432
+  database: airbyte
+  user: airbyte
+  existingSecret: cloudsql-db-credentials
+  existingSecretPasswordKey: password
+
+cloudSqlProxy:
+  enabled: true
+  instanceConnectionName: PROJECT_ID:REGION:INSTANCE_NAME
+  serviceAccount: ""
+  workloadIdentity: true
+
+# Single replica for dev
+server:
+  replicaCount: 1
+  
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+worker:
+  replicaCount: 1
+  
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      memory: 2Gi
+  
+  env:
+    - name: STORAGE_TYPE
+      value: GCS
+    - name: STORAGE_BUCKET_NAME
+      value: REPLACE_WITH_STORAGE_BUCKET
+
+temporal:
+  enabled: true
+  replicaCount: 1
+  
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+webapp:
+  replicaCount: 1
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  
+  # Simple LoadBalancer for dev (no IAP)
+  service:
+    type: LoadBalancer
+    annotations:
+      cloud.google.com/load-balancer-type: "External"
+
+metrics:
+  enabled: false  # Disabled in dev to save resources
+
+podDisruptionBudget:
+  enabled: false  # Not needed in dev
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+

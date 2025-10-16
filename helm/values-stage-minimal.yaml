@@ -1,0 +1,72 @@
+# Ultra-minimal Airbyte for Stage - Get it running first!
+# Using all defaults, just scaling down for cost
+
+global:
+  serviceAccountName: airbyte-admin
+
+# Built-in Postgres
+postgresql:
+  enabled: true
+  auth:
+    username: airbyte
+    password: airbyte123
+    database: airbyte
+  primary:
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+
+# Server
+server:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+# Worker  
+worker:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+# Webapp
+webapp:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  service:
+    type: LoadBalancer
+    port: 80
+
+# Temporal
+temporal:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+# Minimal features
+metrics:
+  enabled: false
+
+podDisruptionBudget:
+  enabled: false
+

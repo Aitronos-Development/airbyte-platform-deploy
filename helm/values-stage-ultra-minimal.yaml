@@ -1,0 +1,110 @@
+# Aitronos Connectors Platform - Stage Environment
+# ULTRA MINIMAL - Absolute cheapest working setup
+# Only core components, everything else disabled
+
+global:
+  # Disable all storage features initially
+  storage:
+    type: local
+  logs:
+    type: local
+
+# Built-in Postgres (free in-cluster)
+postgresql:
+  enabled: true
+  auth:
+    username: airbyte
+    password: airbyte123
+    database: airbyte
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+
+# Minimal server
+server:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # Disable connector registry updates to avoid bootloader issues
+  env:
+    - name: AUTO_DETECT_SCHEMA
+      value: "false"
+    - name: MICRONAUT_ENVIRONMENTS
+      value: "control-plane"
+
+# Minimal worker
+worker:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Minimal webapp - LoadBalancer
+webapp:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  service:
+    type: LoadBalancer
+
+# Minimal temporal
+temporal:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Disable everything else
+metrics:
+  enabled: false
+
+podDisruptionBudget:
+  enabled: false
+
+workload-launcher:
+  enabled: false
+
+connector-builder-server:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+cron:
+  enabled: false
+
+keycloak:
+  enabled: false
+

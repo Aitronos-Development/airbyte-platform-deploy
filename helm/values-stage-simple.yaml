@@ -1,0 +1,87 @@
+# Simplified Airbyte Helm Values for Stage - Minimal Cost
+# Using built-in Postgres for now (Cloud SQL integration later)
+
+global:
+  serviceAccountName: airbyte-admin
+  
+  # Storage - GCS
+  storage:
+    type: gcs
+    storageSecretName: airbyte-gcs-credentials
+    gcs:
+      bucket: airbyte-stage-storage
+      
+  logs:
+    storageSecretName: airbyte-gcs-log-credentials
+    gcs:
+      bucket: airbyte-stage-logs
+
+# Use built-in PostgreSQL for simplicity (minimal cost)
+postgresql:
+  enabled: true
+  auth:
+    username: airbyte
+    password: airbyte123
+    database: airbyte
+  primary:
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+
+# Server - minimal
+server:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+# Worker - minimal  
+worker:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+# Webapp - minimal
+webapp:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  
+  # Simple LoadBalancer service (no ingress for now)
+  service:
+    type: LoadBalancer
+    port: 80
+
+# Temporal - minimal
+temporal:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+# Metrics disabled for cost
+metrics:
+  enabled: false
+
+# Pod disruption budgets disabled (not needed for single replicas)
+podDisruptionBudget:
+  enabled: false
+

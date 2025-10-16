@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "airbyte-backend-staging"
+  },
+  "targets": {
+    "airbyte-backend-staging": {
+      "hosting": {
+        "stage": [
+          "airbyte-stage"
+        ],
+        "production": [
+          "airbyte-prod"
+        ]
+      }
+    }
+  }
+}
+

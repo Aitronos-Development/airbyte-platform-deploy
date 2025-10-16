@@ -1,0 +1,21 @@
+# Managed Certificate for Stage
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: airbyte-stage-cert
+  namespace: airbyte
+spec:
+  domains:
+    - airbyte-stage.YOUR_DOMAIN.com
+
+---
+# Managed Certificate for Prod
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: airbyte-prod-cert
+  namespace: airbyte
+spec:
+  domains:
+    - airbyte.YOUR_DOMAIN.com
+

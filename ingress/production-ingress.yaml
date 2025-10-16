@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: connectors-platform-prod-ingress
+  namespace: airbyte
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "connectors-platform-prod-ip"
+    networking.gke.io/managed-certificates: "connectors-platform-prod-cert"
+    kubernetes.io/ingress.allow-http: "false"  # Production: HTTPS only
+  labels:
+    environment: production
+    platform: aitronos-connectors
+spec:
+  rules:
+  # Platform UI - Production
+  - host: connectors.aitronos.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: airbyte-airbyte-webapp-svc
+            port:
+              number: 80
+  
+  # API Endpoint - Production
+  - host: connectors-api.aitronos.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: airbyte-airbyte-server-svc
+            port:
+              number: 8001
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: connectors-platform-prod-cert
+  namespace: airbyte
+spec:
+  domains:
+    - connectors.aitronos.com
+    - connectors-api.aitronos.com
+

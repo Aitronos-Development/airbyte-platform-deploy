@@ -1,0 +1,149 @@
+# Airbyte Helm Chart Values - Stage Environment
+# Chart version should be pinned (update via PR after testing)
+# helm repo add airbyte https://airbytehq.github.io/helm-charts
+
+global:
+  # Custom image registry (Artifact Registry)
+  image:
+    registry: europe-west6-docker.pkg.dev/airbyte-backend-staging/airbyte-stage-platform
+  
+  # Pull secrets for Artifact Registry
+  imagePullSecrets:
+    - name: artifact-registry-secret
+
+  # Service account with Workload Identity
+  serviceAccountName: airbyte-admin
+  
+  # Storage configuration - GCS
+  storage:
+    type: gcs
+    gcs:
+      bucket: airbyte-stage-state
+      credentialsJson: ""  # Leave empty - using Workload Identity
+  
+  # Logs configuration - GCS
+  logs:
+    type: gcs
+    gcs:
+      bucket: airbyte-stage-logs
+      credentialsJson: ""  # Leave empty - using Workload Identity
+
+# External PostgreSQL (Cloud SQL via Cloud SQL Proxy sidecar)
+postgresql:
+  enabled: false  # Use external Cloud SQL
+
+externalDatabase:
+  host: 127.0.0.1  # Cloud SQL Proxy sidecar
+  port: 5432
+  database: airbyte  # From Terraform output
+  user: airbyte      # From Terraform output
+  existingSecret: cloudsql-db-credentials
+  existingSecretPasswordKey: password
+
+# Cloud SQL Proxy sidecar configuration
+cloudSqlProxy:
+  enabled: true
+  instanceConnectionName: airbyte-backend-staging:europe-west6:airbyte-stage-postgres
+  serviceAccount: ""  # Uses Workload Identity
+  workloadIdentity: true
+
+# Server configuration - MINIMAL COST
+server:
+  replicaCount: 1  # Reduced for cost
+  
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  
+  env:
+    - name: AIRBYTE_URL
+      value: "https://airbyte-stage.YOUR_DOMAIN.com"
+    - name: WEBAPP_URL
+      value: "https://airbyte-stage.YOUR_DOMAIN.com"
+
+# Worker configuration - MINIMAL COST
+worker:
+  replicaCount: 1  # Reduced for cost
+  
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      memory: 2Gi
+  
+  # GCS for staging
+  env:
+    - name: STORAGE_TYPE
+      value: GCS
+    - name: STORAGE_BUCKET_NAME
+      value: airbyte-stage-storage
+
+# Temporal configuration
+temporal:
+  enabled: true
+  replicaCount: 1
+  
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      memory: 2Gi
+
+# Webapp configuration - MINIMAL COST
+webapp:
+  replicaCount: 1  # Reduced for cost
+  
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  
+  # Ingress with IAP
+  ingress:
+    enabled: true
+    className: "gce"
+    annotations:
+      kubernetes.io/ingress.class: "gce"
+      kubernetes.io/ingress.global-static-ip-name: "airbyte-stage-ip"
+      networking.gke.io/managed-certificates: "airbyte-stage-cert"
+      # IAP configuration
+      kubernetes.io/ingress.allow-http: "false"
+      # Add IAP backend config annotation (created separately)
+      cloud.google.com/backend-config: '{"default": "airbyte-iap-config"}'
+    
+    hosts:
+      - host: airbyte-stage.YOUR_DOMAIN.com
+        paths:
+          - path: /
+            pathType: Prefix
+    
+    tls:
+      - secretName: airbyte-stage-tls
+        hosts:
+          - airbyte-stage.YOUR_DOMAIN.com
+
+# Monitoring and observability
+metrics:
+  enabled: true
+
+# Pod disruption budgets
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Resource quotas per namespace
+# Note: Autopilot handles node scaling automatically
+
