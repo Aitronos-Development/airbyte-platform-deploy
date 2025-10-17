@@ -46,17 +46,17 @@ nvm use 20.19.0
 Run entire platform locally (UI + Backend + Database):
 
 ```bash
-cd /Users/philliploacker/Documents/GitHub/airbyte-platform
+cd /Users/philliploacker/Documents/GitHub/airbyte
 ./start-dev.sh
+# Choose option 1 (Frontend) when prompted
 ```
 
 Access at: http://localhost:2000
 
 **What this does:**
-- Starts local Kind cluster
-- Deploys Airbyte services locally
+- Starts Airbyte backend with `abctl`
 - Runs frontend on port 2000 with hot-reload
-- Backend runs in Kubernetes
+- Interactive menu for different dev modes
 
 ### Option 2: Local UI + Staging Backend
 
