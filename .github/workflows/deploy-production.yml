@@ -26,7 +26,7 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: 'google-github-actions/auth@v2'
         with:
-          workload_identity_provider: 'projects/828187884021/locations/global/workloadIdentityPools/github-actions/providers/github'
+          workload_identity_provider: 'projects/178980378559/locations/global/workloadIdentityPools/github-actions/providers/github'
           service_account: 'github-actions-production@airbyte-backend-production.iam.gserviceaccount.com'
       
       - name: Setup Cloud SDK
