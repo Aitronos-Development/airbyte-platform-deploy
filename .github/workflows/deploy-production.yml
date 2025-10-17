@@ -27,7 +27,7 @@ jobs:
         uses: 'google-github-actions/auth@v2'
         with:
           workload_identity_provider: 'projects/828187884021/locations/global/workloadIdentityPools/github-actions/providers/github'
-          service_account: 'github-actions-staging@airbyte-backend-staging.iam.gserviceaccount.com'
+          service_account: 'github-actions-production@airbyte-backend-production.iam.gserviceaccount.com'
       
       - name: Setup Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -69,7 +69,8 @@ jobs:
       
       - name: Apply Ingress
         run: |
-          kubectl apply --validate=false -f ingress/production-ingress.yaml
+          kubectl apply --validate=false -f ingress/iap-backend-config.yaml
+          kubectl apply --validate=false -f ingress/dual-domain-ingress-prod.yaml
       
       - name: Wait for deployments
         run: |
