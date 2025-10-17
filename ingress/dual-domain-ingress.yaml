@@ -8,6 +8,7 @@ metadata:
     kubernetes.io/ingress.global-static-ip-name: "connectors-platform-ip"
     networking.gke.io/managed-certificates: "connectors-platform-cert"
     kubernetes.io/ingress.allow-http: "true"  # Will redirect to HTTPS after cert
+    cloud.google.com/backend-config: '{"default": "iap-config"}'
 spec:
   rules:
   # Platform UI
